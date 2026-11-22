@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#111418">
+<title>POWERMATIC</title>
+<style>
+  :root {
+    --bg: #111418; --card: #1c2128; --card2: #252c35; --text: #f2f4f7; --muted: #9aa5b1;
+    --green: #22a559; --blue: #2f7de1; --amber: #e0a020; --red: #d7262e; --line: #333c47;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { padding-bottom: 104px; user-select: none; -webkit-user-select: none; }
+  button { font: inherit; color: inherit; border: none; border-radius: 14px; cursor: pointer; touch-action: manipulation; }
+  button:disabled { opacity: .35; }
+  input { font: inherit; }
+
+  /* ---------- bara de sus ---------- */
+  header { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 10px 12px 0; }
+  .sus { display: flex; align-items: center; gap: 10px; }
+  .titlu { font-weight: 800; font-size: 20px; letter-spacing: .5px; }
+  .conex { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--muted); flex: 1; min-width: 0; }
+  .conex span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .punct { width: 14px; height: 14px; border-radius: 50%; background: #666; flex: none; }
+  .punct.ok { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .punct.lucru { background: var(--amber); }
+  .limba { display: flex; border: 2px solid var(--line); border-radius: 12px; overflow: hidden; flex: none; }
+  .limba button { border-radius: 0; background: none; padding: 8px 12px; font-weight: 700; color: var(--muted); }
+  .limba button.activ { background: var(--card2); color: var(--text); }
+  #btnConectare { width: 100%; margin-top: 10px; padding: 16px; font-size: 20px; font-weight: 800; background: var(--blue); }
+  #btnConectare.deconectare { background: var(--card2); font-size: 16px; padding: 12px; }
+  .parola { display: none; margin-top: 10px; background: var(--card); border-radius: 14px; padding: 12px; }
+  .parola.vizibil { display: block; }
+  .parola input[type=password] { width: 100%; padding: 14px; font-size: 20px; border-radius: 12px;
+    border: 2px solid var(--line); background: var(--bg); color: var(--text); }
+  .parola .rand { display: flex; gap: 10px; margin-top: 10px; align-items: center; }
+  .parola .rand label { flex: 1; color: var(--muted); font-size: 15px; display: flex; gap: 8px; align-items: center; }
+  .parola .rand input { width: 24px; height: 24px; }
+  .parola button { padding: 14px 22px; font-size: 18px; font-weight: 800; background: var(--green); }
+  .eroareParola { color: #ff7b80; margin-top: 8px; font-weight: 700; display: none; }
+
+  nav { display: flex; gap: 6px; margin-top: 10px; }
+  nav button { flex: 1; padding: 14px 4px; font-size: 18px; font-weight: 800; background: var(--card);
+    color: var(--muted); border-radius: 14px 14px 0 0; }
+  nav button.activ { background: var(--card2); color: var(--text); }
+
+  main { padding: 0 12px; }
+  .pagina { display: none; background: var(--card2); border-radius: 0 0 14px 14px; padding: 12px; }
+  .pagina.activ { display: block; }
+
+  .card { background: var(--card); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+  .eticheta { color: var(--muted); font-size: 14px; text-transform: uppercase; letter-spacing: .5px; font-weight: 700; }
+  .mare { font-size: 30px; font-weight: 800; margin-top: 4px; }
+  .mic { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+  /* ---------- STARE ---------- */
+  #cardStare { border-left: 10px solid #666; }
+  #cardStare.repaus { border-color: var(--green); }
+  #cardStare.lucru { border-color: var(--blue); }
+  #cardStare.tutun { border-color: var(--amber); }
+  #cardStare.eroare { border-color: var(--red); background: #3a1517; }
+  .grila2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grila3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .contor { font-size: 36px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .actiuni { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .actiune { position: relative; overflow: hidden; min-height: 96px; padding: 12px; font-size: 20px; font-weight: 800;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; touch-action: none; }
+  .actiune small { font-size: 13px; font-weight: 600; opacity: .85; margin-top: 4px; }
+  .actiune .umplere { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: rgba(255,255,255,.35); pointer-events: none; }
+  .actiune.tinut .umplere { width: 100%; transition: width 1s linear; }
+  .actiune > span { position: relative; }
+  .verde { background: var(--green); }
+  .albastru { background: var(--blue); }
+  .galben { background: var(--amber); color: #1a1200; }
+  .gri { background: #3d4753; }
+  .senzori { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+  .senzor { background: var(--card2); border-radius: 10px; padding: 8px 4px; text-align: center; }
+  .senzor b { display: block; font-size: 15px; }
+  .senzor i { display: block; font-style: normal; font-size: 11px; color: var(--muted); min-height: 26px; }
+  .senzor .val { font-size: 24px; font-weight: 800; border-radius: 8px; margin-top: 4px; background: #333; }
+  .senzor .val.v1 { background: #1e6b3d; }
+  .avertizare { background: #3a2c0a; border: 2px solid var(--amber); border-radius: 12px; padding: 10px 12px;
+    margin-bottom: 12px; font-weight: 700; display: none; }
+  .avertizare.vizibil { display: block; }
+
+  /* ---------- SETARI ---------- */
+  .setare { background: var(--card); border-radius: 14px; padding: 12px; margin-bottom: 12px; border: 3px solid transparent; }
+  .setare.modificat { border-color: var(--amber); }
+  .setare .cap { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .setare .nume { font-size: 18px; font-weight: 800; }
+  .setare .cod { color: var(--muted); font-weight: 800; }
+  .setare .desc { color: var(--muted); font-size: 14px; margin: 4px 0 10px; }
+  .reglaj { display: grid; grid-template-columns: 76px 1fr 76px; gap: 10px; align-items: stretch; }
+  .reglaj button { font-size: 40px; font-weight: 800; background: #3d4753; min-height: 72px; }
+  .reglaj input { width: 100%; min-width: 0; text-align: center; font-size: 30px; font-weight: 800; border-radius: 12px;
+    border: 2px solid var(--line); background: var(--bg); color: var(--text); padding: 6px; }
+  .unitate { text-align: center; color: var(--muted); font-size: 14px; margin-top: 6px; }
+  .inMasina { color: var(--muted); font-size: 14px; margin-top: 4px; text-align: center; }
+  .setare.principala { background: #1d2a3c; border-color: var(--blue); }
+  .setare.principala.modificat { border-color: var(--amber); }
+  .setare.principala .nume { font-size: 22px; }
+  .setare.principala .reglaj { grid-template-columns: 84px 1fr 84px; }
+  .setare.principala .reglaj button { min-height: 96px; font-size: 52px; }
+  .setare.principala .reglaj input { font-size: 44px; padding: 4px 0; }
+  .comutator { display: grid; gap: 10px; }
+  .comutator button { padding: 18px 4px; font-size: 22px; font-weight: 800; background: #3d4753; }
+  .comutator button.ales { background: var(--blue); }
+  .comutator button.ales.diferit { background: var(--amber); color: #1a1200; }
+  .salvare { position: sticky; bottom: 104px; display: flex; gap: 10px; padding-top: 6px; background: var(--card2); }
+  #btnSalveaza { flex: 1; padding: 20px; font-size: 22px; font-weight: 800; background: var(--green); }
+  #btnAnuleaza { padding: 20px 16px; font-size: 16px; font-weight: 700; background: #3d4753; }
+
+  /* ---------- LOG ---------- */
+  .logBara { display: flex; gap: 10px; margin-bottom: 10px; }
+  .logBara button { padding: 14px 18px; font-size: 17px; font-weight: 800; background: #3d4753; }
+  .logBara label { flex: 1; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 15px; }
+  .logBara label input { width: 22px; height: 22px; }
+  #log { background: #0a0c0f; border-radius: 12px; padding: 8px; height: calc(100vh - 420px); min-height: 220px; overflow-y: auto;
+    font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.45; user-select: text; -webkit-user-select: text; }
+  #log div { white-space: pre-wrap; word-break: break-word; }
+  #log .t { color: #5c6773; }
+  #log .er { color: #ff7b80; font-weight: 700; }
+  #log .eu { color: #7fb8ff; }
+  .manual { display: flex; gap: 10px; margin-top: 10px; }
+  .manual input { flex: 1; min-width: 0; padding: 12px; font-size: 18px; border-radius: 12px; border: 2px solid var(--line);
+    background: var(--bg); color: var(--text); text-transform: uppercase; }
+  .manual button { padding: 12px 18px; font-size: 17px; font-weight: 800; background: var(--blue); }
+
+  /* ---------- STOP ---------- */
+  #btnStop { position: fixed; left: 10px; right: 10px; bottom: 10px; height: 84px; z-index: 10; background: var(--red);
+    font-size: 40px; font-weight: 900; letter-spacing: 4px; box-shadow: 0 -4px 18px rgba(0,0,0,.6); touch-action: none; }
+  #btnStop:active { background: #ff3b44; }
+
+  #mesaj { position: fixed; left: 16px; right: 16px; bottom: 108px; z-index: 20; background: #f2f4f7; color: #111;
+    padding: 14px; border-radius: 12px; font-size: 17px; font-weight: 700; text-align: center;
+    opacity: 0; transform: translateY(10px); transition: all .2s; pointer-events: none; }
+  #mesaj.vizibil { opacity: 1; transform: none; }
+  #faraBluetooth { display: none; margin: 12px; background: #3a1517; border: 2px solid var(--red); border-radius: 14px; padding: 14px; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="sus">
+    <div class="titlu">POWERMATIC</div>
+    <div class="conex"><div class="punct" id="punct"></div><span id="textConex"></span></div>
+    <div class="limba">
+      <button id="limbaRO">RO</button><button id="limbaDE">DE</button>
+    </div>
+  </div>
+  <button id="btnConectare" data-t="conectare"></button>
+
+  <div class="parola" id="boxParola">
+    <div class="eticheta" data-t="parola"></div>
+    <input type="password" id="inParola" autocomplete="current-password">
+    <div class="rand">
+      <label><input type="checkbox" id="tineMinte" checked><span data-t="tineMinte"></span></label>
+      <button id="btnParola">OK</button>
+    </div>
+    <div class="eroareParola" id="eroareParola" data-t="parolaGresita"></div>
+  </div>
+
+  <nav>
+    <button data-pag="stare" class="activ" data-t="tabStare"></button>
+    <button data-pag="setari" data-t="tabSetari"></button>
+    <button data-pag="log" data-t="tabLog"></button>
+  </nav>
+</header>
+
+<div id="faraBluetooth" data-t="faraBluetooth"></div>
+
+<main>
+  <!-- ================= STARE ================= -->
+  <section class="pagina activ" id="pag-stare">
+    <div class="card" id="cardStare">
+      <div class="eticheta" data-t="stareMasina"></div>
+      <div class="mare" id="stareText">—</div>
+      <div class="mic" id="stareBrut"></div>
+    </div>
+
+    <div class="avertizare" id="avHome" data-t="avHome"></div>
+
+    <div class="card" id="cardEroare">
+      <div class="eticheta" data-t="ultimaEroare"></div>
+      <div class="mare" id="eroareText" style="font-size:22px">—</div>
+    </div>
+
+    <div class="grila3" style="margin-bottom:12px">
+      <div class="card" style="margin:0"><div class="eticheta" data-t="zilnic"></div><div class="contor" id="cZilnic">—</div></div>
+      <div class="card" style="margin:0"><div class="eticheta" data-t="total"></div><div class="contor" id="cTotal" style="font-size:26px">—</div></div>
+      <div class="card" style="margin:0"><div class="eticheta" data-t="treapta"></div><div class="contor" id="cTreapta">—</div></div>
+    </div>
+
+    <div class="actiuni">
+      <button class="actiune verde" id="btnStart" data-hold="A">
+        <div class="umplere"></div><span data-t="start1"></span><small data-t="tine1s"></small>
+      </button>
+      <button class="actiune albastru" id="btnCuratare" data-hold="K">
+        <div class="umplere"></div><span data-t="curatare"></span><small data-t="tine1s"></small>
+      </button>
+      <button class="actiune galben" id="btnReset"><span data-t="resetEroare"></span></button>
+      <button class="actiune gri" id="btnSenzori"><span data-t="citesteSenzori"></span><small>V</small></button>
+    </div>
+
+    <div class="card">
+      <div class="eticheta" data-t="senzori"></div>
+      <div class="senzori" id="senzori"></div>
+      <div class="mic" id="senzoriVarsta"></div>
+    </div>
+  </section>
+
+  <!-- ================= SETARI ================= -->
+  <section class="pagina" id="pag-setari">
+    <div class="avertizare" id="avSetari"></div>
+    <div id="listaSetari"></div>
+    <div class="salvare">
+      <button id="btnAnuleaza" data-t="anuleaza"></button>
+      <button id="btnSalveaza"></button>
+    </div>
+  </section>
+
+  <!-- ================= LOG ================= -->
+  <section class="pagina" id="pag-log">
+    <div class="logBara">
+      <label><input type="checkbox" id="autoDerulare" checked><span data-t="autoDerulare"></span></label>
+      <button id="btnStergeLog" data-t="sterge"></button>
+    </div>
+    <div id="log"></div>
+    <div class="manual">
+      <input id="inComanda" placeholder="V, C, P40 ..." autocapitalize="characters" autocomplete="off">
+      <button id="btnTrimite" data-t="trimite"></button>
+    </div>
+  </section>
+</main>
+
+<button id="btnStop">STOP</button>
+<div id="mesaj"></div>
+
+<script>
+'use strict';
+
+// =====================================================
+// TEXTE RO / DE
+// =====================================================
+const TEXTE = {
+  ro: {
+    conectare: 'CONECTARE', deconectare: 'Deconectare', reconectare: 'RECONECTARE',
+    neconectat: 'Neconectat', seConecteaza: 'Se conectează…', astepParola: 'Aștept parola…', conectat: 'Conectat',
+    parola: 'Parola mașinii', tineMinte: 'Ține minte pe acest telefon', parolaGresita: 'Parolă greșită',
+    tabStare: 'STARE', tabSetari: 'SETĂRI', tabLog: 'LOG',
+    stareMasina: 'Starea mașinii', ultimaEroare: 'Eroare', zilnic: 'Zilnic', total: 'Total', treapta: 'Treapta',
+    start1: 'START 1 CICLU', curatare: 'MOD CURĂȚARE', tine1s: 'ține apăsat 1 s',
+    resetEroare: 'RESET EROARE', citesteSenzori: 'SENZORI', senzori: 'Senzori',
+    avHome: 'Motoarele nu sunt în HOME. Primul START le aduce în HOME, apoi pune tubul și apasă START din nou.',
+    faraEroare: 'Nicio eroare de la pornire', eroareAcum: 'EROARE ACUM', eroareVeche: 'Ultima (rezolvată)',
+    anuleaza: 'Anulează', salveaza: 'SALVEAZĂ', nimicDeSalvat: 'Nimic de salvat', salveazaN: 'SALVEAZĂ ({n})',
+    doarRepaus: 'Setările se pot schimba doar când mașina e în REPAUS.',
+    meniuLCD: 'Meniul de pe display e deschis. Închide-l întâi (KEY1 ținut 3 s).',
+    neconectatSetari: 'Conectează-te ca să citești setările din mașină.',
+    inMasina: 'în mașină', pornit: 'PORNIT', oprit: 'OPRIT',
+    autoDerulare: 'Derulare automată', sterge: 'ȘTERGE', trimite: 'TRIMITE',
+    salvat: 'Trimis. Verific valorile…', setariConfirmate: 'Setări salvate în mașină ✔',
+    refuzRepaus: 'Mașina a refuzat: doar în REPAUS', stopTrimis: 'STOP trimis',
+    faraBluetooth: 'Acest browser nu are Web Bluetooth. Deschide pagina în Google Chrome pe Android (nu în Samsung Internet), de la adresa https://… și pornește Bluetooth și Locația.',
+    actualizat: 'actualizat acum {s} s', deconectatBrusc: 'Conexiune pierdută',
+    eroriCod: { 1: 'HOPPER', 2: 'CAMERĂ', 3: 'INJECTOR' },
+    stari: {
+      REPAUS: 'Repaus – gata', EROARE: 'EROARE', ASTEPTARE_TUTUN: 'Hopper gol – pune tutun și apasă START',
+      HOME: 'Aduc motoarele în HOME', CURATARE_MOD: 'Mod curățare', CURATARE_TEAVA: 'Curăț țeava (injector)',
+      LUCRU: 'Lucrează – ciclu'
+    },
+    senzoriNume: { J1: 'START', J2: 'Tutun 1', J3: 'Tutun 2', J5: 'Cameră A', J6: 'Cameră B', J7: 'Injector HOME', J8: 'Hopper HOME', J9: 'AX' },
+    setari: {
+      I: ['Injector la final', 'Cât iese injectorul la final de serie (curățare țeavă). Pași de 50 ms. 0 = oprit.'],
+      N: ['Treapta', '1 = cursă parțială, 2 = 2 AX, 3 = 3 AX (ca tasta KEY1).'],
+      P: ['Treapta 1 – prima cursă', 'Cât din prima cursă a hopper-ului (100 = 1 AX complet).'],
+      D: ['Treapta 2 – a doua cursă', 'Cât din a doua cursă (100 = 2 curse întregi).'],
+      T: ['Cursă hopper completă', 'Durata unei curse complete. Se măsoară și singură.'],
+      H: ['Treapta 2/3 – avans după AX', 'Cât mai merge hopper-ul după ultimul AX. 0 = oprit, altfel 40–200.'],
+      G: ['Detecție buncăr gol', 'Fără tutun pe J2/J3 → mașina se oprește și cere tutun.']
+    }
+  },
+  de: {
+    conectare: 'VERBINDEN', deconectare: 'Trennen', reconectare: 'NEU VERBINDEN',
+    neconectat: 'Nicht verbunden', seConecteaza: 'Verbinde…', astepParola: 'Warte auf Passwort…', conectat: 'Verbunden',
+    parola: 'Maschinen-Passwort', tineMinte: 'Auf diesem Handy merken', parolaGresita: 'Falsches Passwort',
+    tabStare: 'STATUS', tabSetari: 'EINSTELL.', tabLog: 'LOG',
+    stareMasina: 'Maschinenstatus', ultimaEroare: 'Fehler', zilnic: 'Heute', total: 'Gesamt', treapta: 'Stufe',
+    start1: 'START 1 ZYKLUS', curatare: 'REINIGUNG', tine1s: '1 s gedrückt halten',
+    resetEroare: 'FEHLER RESET', citesteSenzori: 'SENSOREN', senzori: 'Sensoren',
+    avHome: 'Motoren nicht in Grundstellung (HOME). Erster START fährt sie in HOME, dann Hülse aufsetzen und erneut START.',
+    faraEroare: 'Kein Fehler seit dem Einschalten', eroareAcum: 'FEHLER JETZT', eroareVeche: 'Letzter (behoben)',
+    anuleaza: 'Verwerfen', salveaza: 'SPEICHERN', nimicDeSalvat: 'Nichts zu speichern', salveazaN: 'SPEICHERN ({n})',
+    doarRepaus: 'Einstellungen nur änderbar, wenn die Maschine im Ruhezustand ist.',
+    meniuLCD: 'Das Display-Menü ist offen. Zuerst schließen (KEY1 3 s halten).',
+    neconectatSetari: 'Verbinden, um die Einstellungen der Maschine zu lesen.',
+    inMasina: 'in Maschine', pornit: 'EIN', oprit: 'AUS',
+    autoDerulare: 'Automatisch scrollen', sterge: 'LÖSCHEN', trimite: 'SENDEN',
+    salvat: 'Gesendet. Prüfe Werte…', setariConfirmate: 'Einstellungen gespeichert ✔',
+    refuzRepaus: 'Abgelehnt: nur im Ruhezustand', stopTrimis: 'STOP gesendet',
+    faraBluetooth: 'Dieser Browser hat kein Web Bluetooth. Seite in Google Chrome auf Android öffnen (nicht Samsung Internet), über https://…, und Bluetooth + Standort einschalten.',
+    actualizat: 'aktualisiert vor {s} s', deconectatBrusc: 'Verbindung verloren',
+    eroriCod: { 1: 'HOPPER', 2: 'KAMMER', 3: 'INJEKTOR' },
+    stari: {
+      REPAUS: 'Bereit', EROARE: 'FEHLER', ASTEPTARE_TUTUN: 'Trichter leer – Tabak nachfüllen, dann START',
+      HOME: 'Fahre in Grundstellung', CURATARE_MOD: 'Reinigungsmodus', CURATARE_TEAVA: 'Rohrreinigung (Injektor)',
+      LUCRU: 'Läuft – Zyklus'
+    },
+    senzoriNume: { J1: 'START', J2: 'Tabak 1', J3: 'Tabak 2', J5: 'Kammer A', J6: 'Kammer B', J7: 'Injektor HOME', J8: 'Hopper HOME', J9: 'AX' },
+    setari: {
+      I: ['Injektor am Ende', 'Wie weit der Injektor am Serienende ausfährt (Rohrreinigung). Schritte 50 ms. 0 = aus.'],
+      N: ['Stufe', '1 = Teilhub, 2 = 2 AX, 3 = 3 AX (wie Taste KEY1).'],
+      P: ['Stufe 1 – erster Hub', 'Anteil des ersten Hopper-Hubs (100 = 1 voller AX).'],
+      D: ['Stufe 2 – zweiter Hub', 'Anteil des zweiten Hubs (100 = 2 volle Hübe).'],
+      T: ['Voller Hopper-Hub', 'Dauer eines vollen Hubs. Wird auch automatisch gemessen.'],
+      H: ['Stufe 2/3 – Nachlauf nach AX', 'Hopper-Nachlauf nach dem letzten AX. 0 = aus, sonst 40–200.'],
+      G: ['Leer-Erkennung', 'Kein Tabak an J2/J3 → Maschine hält an und verlangt Tabak.']
+    }
+  }
+};
+
+function citesteLocal(cheie, implicit) {
+  try { const v = localStorage.getItem(cheie); return v === null ? implicit : v; } catch (e) { return implicit; }
+}
+function scrieLocal(cheie, valoare) {
+  try { if (valoare === null) localStorage.removeItem(cheie); else localStorage.setItem(cheie, valoare); } catch (e) {}
+}
+
+let limba = citesteLocal('pm_limba', 'ro') === 'de' ? 'de' : 'ro';
+const T = () => TEXTE[limba];
+const $ = id => document.getElementById(id);
+
+// =====================================================
+// SETARI: limite si pasi (aceleasi ca in firmware)
+// =====================================================
+const DEF_SETARI = [
+  { k: 'I', min: 0, max: 1000, pas: 50, unit: 'ms', principala: true },
+  { k: 'N', tip: 'alegere', optiuni: [1, 2, 3] },
+  { k: 'P', min: 10, max: 100, pas: 5, unit: '%' },
+  { k: 'D', min: 10, max: 100, pas: 5, unit: '%' },
+  { k: 'T', min: 150, max: 1000, pas: 10, unit: 'ms' },
+  { k: 'H', min: 0, max: 200, pas: 10, unit: 'ms', special: 'H' },
+  { k: 'G', tip: 'onoff' }
+];
+
+const masina = { stare: null, treapta: null, zilnic: null, total: null, cod: 0, meniu: 0, home: 1,
+  ultimcod: 0, eroare: '-', setari: {}, senzori: {}, senzoriLa: 0 };
+const dorit = {};   // valori modificate de mine, nesalvate
+
+// H: 0 sau 40-200
+function corecteaza(def, v) {
+  v = Math.round(Number(v));
+  if (!isFinite(v)) return null;
+  if (def.special === 'H') {
+    if (v <= 0) return 0;
+    if (v < 40) return v < 20 ? 0 : 40;
+    return Math.min(200, v);
+  }
+  return Math.max(def.min, Math.min(def.max, v));
+}
+function pasH(v, directie) {
+  if (directie > 0) return v === 0 ? 40 : Math.min(200, v + 10);
+  return v <= 40 ? 0 : v - 10;
+}
+
+// =====================================================
+// BLUETOOTH
+// =====================================================
+const UUID_SERVICIU = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+const UUID_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
+const UUID_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+
+let dispozitiv = null, carRx = null, carTx = null;
+let faza = 'neconectat';   // neconectat | conectare | parola | conectat
+let restPrimit = '';
+let lantScriere = Promise.resolve();
+const encoder = new TextEncoder(), decoder = new TextDecoder();
+let blocareEcran = null;
+
+function seteazaFaza(f) {
+  faza = f;
+  const p = $('punct');
+  p.className = 'punct' + (f === 'conectat' ? ' ok' : (f === 'neconectat' ? '' : ' lucru'));
+  const txt = { neconectat: T().neconectat, conectare: T().seConecteaza, parola: T().astepParola, conectat: T().conectat }[f];
+  $('textConex').textContent = txt;
+  const b = $('btnConectare');
+  if (f === 'conectat') { b.textContent = T().deconectare; b.classList.add('deconectare'); }
+  else { b.textContent = dispozitiv ? T().reconectare : T().conectare; b.classList.remove('deconectare'); }
+  b.disabled = (f === 'conectare');
+  if (f !== 'parola') $('boxParola').classList.remove('vizibil');
+  actualizeazaButoane();
+  randeazaSetari();
+  gestioneazaBlocareEcran();
+}
+
+async function conecteaza() {
+  if (!navigator.bluetooth) { $('faraBluetooth').style.display = 'block'; return; }
+  try {
+    if (!dispozitiv) {
+      dispozitiv = await navigator.bluetooth.requestDevice({
+        filters: [{ namePrefix: 'POWERMATIC' }, { services: [UUID_SERVICIU] }],
+        optionalServices: [UUID_SERVICIU]
+      });
+      dispozitiv.addEventListener('gattserverdisconnected', laDeconectare);
+    }
+    seteazaFaza('conectare');
+    const server = await dispozitiv.gatt.connect();
+    const serviciu = await server.getPrimaryService(UUID_SERVICIU);
+    carRx = await serviciu.getCharacteristic(UUID_RX);
+    carTx = await serviciu.getCharacteristic(UUID_TX);
+    restPrimit = '';
+    carTx.addEventListener('characteristicvaluechanged', laDatePrimite);
+    await carTx.startNotifications();
+    adaugaLog('BLE conectat', 'eu');
+
+    const salvata = citesteLocal('pm_parola', null);
+    if (salvata) { seteazaFaza('parola'); trimiteLogin(salvata); }
+    else cerParola();
+  } catch (e) {
+    if (e && e.name === 'NotFoundError') { seteazaFaza('neconectat'); return; }  // fereastra inchisa
+    adaugaLog('! ' + (e && e.message ? e.message : e), 'er');
+    arataMesaj(String(e && e.message ? e.message : e));
+    try { if (dispozitiv && dispozitiv.gatt.connected) dispozitiv.gatt.disconnect(); } catch (x) {}
+    seteazaFaza('neconectat');
+  }
+}
+
+function deconecteaza() {
+  try { if (dispozitiv && dispozitiv.gatt.connected) dispozitiv.gatt.disconnect(); } catch (e) {}
+}
+
+function laDeconectare() {
+  const eraConectat = (faza === 'conectat');
+  carRx = carTx = null;
+  lantScriere = Promise.resolve();
+  seteazaFaza('neconectat');
+  adaugaLog('BLE deconectat', 'eu');
+  if (eraConectat) { arataMesaj(T().deconectatBrusc); vibreaza([100, 80, 100]); }
+}
+
+function cerParola() {
+  seteazaFaza('parola');
+  $('boxParola').classList.add('vizibil');
+  $('inParola').value = '';
+  setTimeout(() => $('inParola').focus(), 50);
+}
+
+function trimiteLogin(parola) {
+  scrieBLE('#LOGIN ' + parola, true);
+}
+
+// Scrierile se fac pe rand (BLE nu accepta doua deodata)
+function scrieBLE(text, faraLog) {
+  if (!carRx) return Promise.resolve(false);
+  if (!faraLog && text !== '?') adaugaLog('> ' + text, 'eu');
+  const date = encoder.encode(text + '\n');
+  lantScriere = lantScriere.then(async () => {
+    if (!carRx) return false;
+    for (let i = 0; i < date.length; i += 20) {
+      const bucata = date.slice(i, i + 20);
+      if (carRx.writeValueWithResponse) await carRx.writeValueWithResponse(bucata);
+      else await carRx.writeValue(bucata);
+    }
+    return true;
+  }).catch(e => { adaugaLog('! ' + e.message, 'er'); return false; });
+  return lantScriere;
+}
+
+function trimiteComanda(cmd) {
+  if (faza !== 'conectat') { arataMesaj(T().neconectat); return Promise.resolve(false); }
+  return scrieBLE(cmd);
+}
+
+function laDatePrimite(ev) {
+  restPrimit += decoder.decode(ev.target.value);
+  let poz;
+  while ((poz = restPrimit.indexOf('\n')) >= 0) {
+    const linie = restPrimit.slice(0, poz).replace(/\r$/, '');
+    restPrimit = restPrimit.slice(poz + 1);
+    if (linie.length) proceseazaLinie(linie);
+  }
+  if (restPrimit.length > 2000) restPrimit = '';
+}
+
+// =====================================================
+// LINII DE LA MASINA
+// =====================================================
+function citesteCheiValori(text) {
+  const rez = {};
+  const re = /(\w+)=(\S+)/g; let m;
+  while ((m = re.exec(text))) rez[m[1]] = m[2];
+  return rez;
+}
+
+function proceseazaLinie(linie) {
+  if (linie === '#OK LOGIN') {
+    seteazaFaza('conectat');
+    adaugaLog('Parolă OK', 'eu');
+    return;
+  }
+  if (linie === '#ERR PAROLA') {
+    scrieLocal('pm_parola', null);
+    cerParola();
+    $('eroareParola').style.display = 'block';
+    vibreaza(200);
+    return;
+  }
+  if (linie === '#ERR LOGIN') { cerParola(); return; }
+
+  if (linie.startsWith('#STARE ')) {
+    const idx = linie.indexOf(' eroare=');
+    const kv = citesteCheiValori(idx >= 0 ? linie.slice(0, idx) : linie);
+    const vecheStare = masina.stare;
+    masina.stare = kv.stare;
+    masina.treapta = +kv.treapta; masina.zilnic = +kv.zilnic; masina.total = +kv.total;
+    masina.cod = +kv.cod; masina.meniu = +kv.meniu; masina.home = +kv.home; masina.ultimcod = +kv.ultimcod;
+    masina.eroare = idx >= 0 ? linie.slice(idx + 8) : '-';
+    if (masina.stare === 'EROARE' && vecheStare && vecheStare !== 'EROARE') vibreaza([300, 100, 300]);
+    curataDorite();
+    randeazaStare(); randeazaSetari(); actualizeazaButoane();
+    return;
+  }
+  if (linie.startsWith('#SET ')) {
+    const kv = citesteCheiValori(linie);
+    for (const k of ['P', 'D', 'T', 'H', 'G', 'I']) if (k in kv) masina.setari[k] = +kv[k];
+    curataDorite();
+    randeazaSetari();
+    return;
+  }
+  if (linie.startsWith('#SENZ ')) {
+    const kv = citesteCheiValori(linie);
+    for (const k in kv) masina.senzori[k] = +kv[k];
+    masina.senzoriLa = Date.now();
+    randeazaSenzori();
+    return;
+  }
+  if (linie.startsWith('#')) return;
+
+  // Linie normala de log (ca pe Serial)
+  const esteEroare = /EROARE|TIMEOUT|BLOCAT|PIERDUT/.test(linie);
+  adaugaLog(linie, esteEroare ? 'er' : '');
+
+  if (/SETARI DOAR IN REPAUS|TREAPTA DOAR IN REPAUS/.test(linie)) arataMesaj(T().refuzRepaus);
+
+  // Raspunsul la V: "J1=1 (START ...)", "J2=0 J3=1" ...
+  if (/^J\d=/.test(linie)) {
+    const re = /J(\d)=(\d)/g; let m;
+    while ((m = re.exec(linie))) masina.senzori['J' + m[1]] = +m[2];
+    masina.senzoriLa = Date.now();
+    randeazaSenzori();
+  }
+}
+
+// O valoare dorita care a ajuns in masina nu mai e "modificata"
+function curataDorite() {
+  let confirmat = false;
+  for (const k of Object.keys(dorit)) {
+    const actual = (k === 'N') ? masina.treapta : masina.setari[k];
+    if (actual === dorit[k] && asteptConfirmare.has(k)) { delete dorit[k]; asteptConfirmare.delete(k); confirmat = true; }
+  }
+  if (confirmat && Object.keys(dorit).length === 0) arataMesaj(T().setariConfirmate);
+}
+const asteptConfirmare = new Set();
+
+// =====================================================
+// AFISARE STARE
+// =====================================================
+function grupStare(s) {
+  if (!s) return null;
+  if (s === 'REPAUS' || s === 'EROARE' || s === 'ASTEPTARE_TUTUN') return s;
+  if (s.startsWith('HOME') || s === 'PAUZA_HOME') return 'HOME';
+  if (s.startsWith('MC_')) return 'CURATARE_MOD';
+  if (s.includes('CURATARE')) return 'CURATARE_TEAVA';
+  return 'LUCRU';
+}
+
+function randeazaStare() {
+  const g = grupStare(masina.stare);
+  const card = $('cardStare');
+  card.className = 'card ' + ({ REPAUS: 'repaus', EROARE: 'eroare', ASTEPTARE_TUTUN: 'tutun' }[g] || (g ? 'lucru' : ''));
+  $('stareText').textContent = g ? T().stari[g] : '—';
+  $('stareBrut').textContent = masina.stare || '';
+
+  const cod3 = n => String(n).padStart(3, '0');
+  const numeCod = n => T().eroriCod[n] || '';
+  const ce = $('cardEroare'), et = $('eroareText');
+  if (masina.stare === 'EROARE') {
+    ce.style.background = '#3a1517';
+    et.innerHTML = '';
+    et.textContent = T().eroareAcum + ' ' + cod3(masina.cod) + ' ' + numeCod(masina.cod) + ' – ' + masina.eroare;
+  } else if (masina.eroare && masina.eroare !== '-') {
+    ce.style.background = '';
+    et.textContent = T().eroareVeche + ': ' + cod3(masina.ultimcod) + ' ' + numeCod(masina.ultimcod) + ' – ' + masina.eroare;
+  } else {
+    ce.style.background = '';
+    et.textContent = masina.stare ? T().faraEroare : '—';
+  }
+
+  $('cZilnic').textContent = masina.zilnic ?? '—';
+  $('cTotal').textContent = masina.total ?? '—';
+  $('cTreapta').textContent = masina.treapta ?? '—';
+  $('avHome').classList.toggle('vizibil', masina.stare === 'REPAUS' && masina.home === 0);
+}
+
+function randeazaSenzori() {
+  const box = $('senzori');
+  const chei = ['J1', 'J2', 'J3', 'J5', 'J6', 'J7', 'J8', 'J9'];
+  box.innerHTML = '';
+  for (const k of chei) {
+    const v = masina.senzori[k];
+    const d = document.createElement('div');
+    d.className = 'senzor';
+    d.innerHTML = '<b></b><i></i><div class="val"></div>';
+    d.querySelector('b').textContent = k;
+    d.querySelector('i').textContent = T().senzoriNume[k];
+    const val = d.querySelector('.val');
+    val.textContent = (v === undefined || isNaN(v)) ? '–' : v;
+    if (v === 1) val.classList.add('v1');
+    box.appendChild(d);
+  }
+  randeazaVarstaSenzori();
+}
+function randeazaVarstaSenzori() {
+  $('senzoriVarsta').textContent = masina.senzoriLa
+    ? T().actualizat.replace('{s}', Math.round((Date.now() - masina.senzoriLa) / 1000)) : '';
+}
+
+function actualizeazaButoane() {
+  const ok = (faza === 'conectat');
+  const s = masina.stare;
+  $('btnStart').disabled = !ok || !(s === 'REPAUS' || s === 'ASTEPTARE_TUTUN');
+  $('btnCuratare').disabled = !ok || !(s === 'REPAUS' || s === 'ASTEPTARE_TUTUN');
+  $('btnReset').disabled = !ok || s !== 'EROARE';
+  $('btnSenzori').disabled = !ok;
+  $('btnTrimite').disabled = !ok;
+  $('btnStop').disabled = !ok;
+}
+
+// =====================================================
+// AFISARE SETARI
+// =====================================================
+function valoareMasina(k) { return k === 'N' ? masina.treapta : masina.setari[k]; }
+function valoareAfisata(k) { return (k in dorit) ? dorit[k] : valoareMasina(k); }
+
+function setariPermise() {
+  return faza === 'conectat' && masina.stare === 'REPAUS' && !masina.meniu;
+}
+
+function randeazaSetari() {
+  const lista = $('listaSetari');
+  // nu redesena cat timp scriu intr-un camp
+  if (lista.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') {
+    actualizeazaSalvare(); return;
+  }
+  lista.innerHTML = '';
+  const permis = setariPermise();
+
+  for (const def of DEF_SETARI) {
+    const k = def.k;
+    const [nume, desc] = T().setari[k];
+    const vm = valoareMasina(k);
+    const va = valoareAfisata(k);
+    const card = document.createElement('div');
+    card.className = 'setare' + (def.principala ? ' principala' : '') + ((k in dorit) ? ' modificat' : '');
+    card.innerHTML = '<div class="cap"><div class="nume"></div><div class="cod"></div></div><div class="desc"></div>';
+    card.querySelector('.nume').textContent = nume;
+    card.querySelector('.cod').textContent = k === 'N' ? 'KEY1' : k;
+    card.querySelector('.desc').textContent = desc;
+
+    if (def.tip === 'alegere' || def.tip === 'onoff') {
+      const opt = def.tip === 'onoff' ? [[1, T().pornit], [0, T().oprit]] : def.optiuni.map(o => [o, String(o)]);
+      const c = document.createElement('div');
+      c.className = 'comutator';
+      c.style.gridTemplateColumns = `repeat(${opt.length}, 1fr)`;
+      for (const [v, et] of opt) {
+        const b = document.createElement('button');
+        b.textContent = et;
+        if (va === v) b.className = 'ales' + ((k in dorit) ? ' diferit' : '');
+        b.disabled = !permis || vm === undefined || vm === null;
+        b.onclick = () => { schimba(k, v); };
+        c.appendChild(b);
+      }
+      card.appendChild(c);
+    } else {
+      const r = document.createElement('div');
+      r.className = 'reglaj';
+      const minus = document.createElement('button'); minus.textContent = '−';
+      const plus = document.createElement('button'); plus.textContent = '+';
+      const inp = document.createElement('input');
+      inp.type = 'number'; inp.inputMode = 'numeric';
+      inp.min = def.min; inp.max = def.max; inp.step = 1;
+      inp.value = (va === undefined || va === null) ? '' : va;
+      const dezactivat = !permis || va === undefined || va === null;
+      minus.disabled = plus.disabled = inp.disabled = dezactivat;
+      const pasCu = dir => {
+        const v = valoareAfisata(k);
+        if (v === undefined) return;
+        schimba(k, def.special === 'H' ? pasH(v, dir) : corecteaza(def, v + dir * def.pas));
+      };
+      minus.onclick = () => pasCu(-1);
+      plus.onclick = () => pasCu(1);
+      inp.onchange = () => {
+        const v = corecteaza(def, inp.value);
+        if (v === null) { randeazaSetari(); return; }
+        inp.blur();
+        schimba(k, v);
+      };
+      inp.onkeydown = e => { if (e.key === 'Enter') inp.blur(); };
+      inp.onblur = () => setTimeout(randeazaSetari, 0);
+      r.append(minus, inp, plus);
+      card.appendChild(r);
+      const u = document.createElement('div');
+      u.className = 'unitate';
+      u.textContent = def.unit + '  ·  ' + (def.special === 'H' ? '0 / 40–200' : def.min + '–' + def.max) + '  ·  ±' + def.pas;
+      card.appendChild(u);
+    }
+
+    if (k in dorit && vm !== undefined) {
+      const im = document.createElement('div');
+      im.className = 'inMasina';
+      im.textContent = T().inMasina + ': ' + (def.tip === 'onoff' ? (vm ? T().pornit : T().oprit) : vm + (def.unit ? ' ' + def.unit : ''));
+      card.appendChild(im);
+    }
+    lista.appendChild(card);
+  }
+
+  const av = $('avSetari');
+  let mesaj = '';
+  if (faza !== 'conectat') mesaj = T().neconectatSetari;
+  else if (masina.meniu) mesaj = T().meniuLCD;
+  else if (masina.stare && masina.stare !== 'REPAUS') mesaj = T().doarRepaus;
+  av.textContent = mesaj;
+  av.classList.toggle('vizibil', !!mesaj);
+  actualizeazaSalvare();
+}
+
+function schimba(k, v) {
+  if (v === valoareMasina(k)) delete dorit[k]; else dorit[k] = v;
+  asteptConfirmare.delete(k);
+  randeazaSetari();
+}
+
+function actualizeazaSalvare() {
+  const n = Object.keys(dorit).length;
+  const b = $('btnSalveaza');
+  b.textContent = n ? T().salveazaN.replace('{n}', n) : T().salveaza;
+  b.disabled = !n || !setariPermise();
+  $('btnAnuleaza').disabled = !n;
+}
+
+async function salveaza() {
+  if (!setariPermise()) { arataMesaj(T().doarRepaus); return; }
+  const ordine = ['I', 'P', 'D', 'T', 'H', 'G', 'N'];
+  for (const k of ordine) {
+    if (!(k in dorit)) continue;
+    asteptConfirmare.add(k);
+    await trimiteComanda(k + dorit[k]);
+  }
+  await trimiteComanda('?');
+  arataMesaj(T().salvat);
+  vibreaza(60);
+}
+
+// =====================================================
+// LOG (ultimele 200 de linii)
+// =====================================================
+const MAX_LOG = 200;
+function adaugaLog(text, clasa) {
+  const log = $('log');
+  const laFinal = log.scrollTop + log.clientHeight >= log.scrollHeight - 30;
+  const d = document.createElement('div');
+  if (clasa) d.className = clasa;
+  const t = document.createElement('span');
+  t.className = 't';
+  t.textContent = new Date().toTimeString().slice(0, 8) + ' ';
+  d.appendChild(t);
+  d.appendChild(document.createTextNode(text));
+  log.appendChild(d);
+  while (log.childElementCount > MAX_LOG) log.removeChild(log.firstChild);
+  if ($('autoDerulare').checked && laFinal) log.scrollTop = log.scrollHeight;
+}
+
+// =====================================================
+// BUTOANE
+// =====================================================
+function vibreaza(model) { try { if (navigator.vibrate) navigator.vibrate(model); } catch (e) {} }
+
+let temporizatorMesaj = null;
+function arataMesaj(text) {
+  const m = $('mesaj');
+  m.textContent = text;
+  m.classList.add('vizibil');
+  clearTimeout(temporizatorMesaj);
+  temporizatorMesaj = setTimeout(() => m.classList.remove('vizibil'), 2500);
+}
+
+// Butoane care trebuie tinute 1 s (START, CURATARE)
+function butonTinut(buton, laTerminare) {
+  let temp = null;
+  const anuleaza = () => { clearTimeout(temp); temp = null; buton.classList.remove('tinut'); };
+  buton.addEventListener('pointerdown', e => {
+    if (buton.disabled) return;
+    e.preventDefault();
+    try { buton.setPointerCapture(e.pointerId); } catch (x) {}
+    buton.classList.add('tinut');
+    vibreaza(20);
+    temp = setTimeout(() => { anuleaza(); vibreaza(120); laTerminare(); }, 1000);
+  });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => buton.addEventListener(ev, anuleaza));
+  buton.addEventListener('contextmenu', e => e.preventDefault());
+}
+
+butonTinut($('btnStart'), () => trimiteComanda('A'));
+butonTinut($('btnCuratare'), () => trimiteComanda('K'));
+$('btnReset').onclick = () => trimiteComanda('R');
+$('btnSenzori').onclick = () => { trimiteComanda('V'); trimiteComanda('?'); };
+
+// STOP: imediat la atingere
+$('btnStop').addEventListener('pointerdown', e => {
+  e.preventDefault();
+  if (faza !== 'conectat') { arataMesaj(T().neconectat); return; }
+  vibreaza(150);
+  trimiteComanda('S');
+  arataMesaj(T().stopTrimis);
+});
+$('btnStop').addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && faza === 'conectat') trimiteComanda('S');
+});
+$('btnStop').addEventListener('contextmenu', e => e.preventDefault());
+
+$('btnConectare').onclick = () => { if (faza === 'conectat' || faza === 'parola') deconecteaza(); else conecteaza(); };
+$('btnParola').onclick = () => {
+  const p = $('inParola').value.trim();
+  if (!p) return;
+  $('eroareParola').style.display = 'none';
+  if ($('tineMinte').checked) scrieLocal('pm_parola', p);
+  $('boxParola').classList.remove('vizibil');
+  trimiteLogin(p);
+};
+$('inParola').onkeydown = e => { if (e.key === 'Enter') $('btnParola').click(); };
+
+$('btnSalveaza').onclick = salveaza;
+$('btnAnuleaza').onclick = () => { for (const k of Object.keys(dorit)) delete dorit[k]; asteptConfirmare.clear(); randeazaSetari(); };
+$('btnStergeLog').onclick = () => { $('log').innerHTML = ''; };
+$('btnTrimite').onclick = () => {
+  const c = $('inComanda').value.trim().toUpperCase();
+  if (!c) return;
+  trimiteComanda(c);
+  $('inComanda').value = '';
+};
+$('inComanda').onkeydown = e => { if (e.key === 'Enter') $('btnTrimite').click(); };
+
+// File
+let paginaActiva = 'stare';
+document.querySelectorAll('nav button').forEach(b => {
+  b.onclick = () => {
+    paginaActiva = b.dataset.pag;
+    document.querySelectorAll('nav button').forEach(x => x.classList.toggle('activ', x === b));
+    document.querySelectorAll('.pagina').forEach(p => p.classList.toggle('activ', p.id === 'pag-' + paginaActiva));
+    if (faza === 'conectat' && paginaActiva !== 'log') trimiteComanda('?');
+    if (paginaActiva === 'log') { const l = $('log'); l.scrollTop = l.scrollHeight; }
+  };
+});
+
+// Pe pagina STARE: citeste starea si senzorii la 2 s
+setInterval(() => {
+  if (faza === 'conectat' && paginaActiva === 'stare' && document.visibilityState === 'visible') scrieBLE('?', true);
+  randeazaVarstaSenzori();
+}, 2000);
+
+// Ecranul nu se stinge cat timp e conectat
+async function gestioneazaBlocareEcran() {
+  try {
+    if (faza === 'conectat' && !blocareEcran && navigator.wakeLock && document.visibilityState === 'visible') {
+      blocareEcran = await navigator.wakeLock.request('screen');
+      blocareEcran.addEventListener('release', () => { blocareEcran = null; });
+    } else if (faza !== 'conectat' && blocareEcran) {
+      await blocareEcran.release(); blocareEcran = null;
+    }
+  } catch (e) {}
+}
+document.addEventListener('visibilitychange', gestioneazaBlocareEcran);
+
+// =====================================================
+// LIMBA
+// =====================================================
+function aplicaLimba() {
+  document.documentElement.lang = limba;
+  document.querySelectorAll('[data-t]').forEach(el => { el.textContent = T()[el.dataset.t]; });
+  $('limbaRO').classList.toggle('activ', limba === 'ro');
+  $('limbaDE').classList.toggle('activ', limba === 'de');
+  seteazaFaza(faza);
+  randeazaStare(); randeazaSenzori();
+}
+$('limbaRO').onclick = () => { limba = 'ro'; scrieLocal('pm_limba', 'ro'); aplicaLimba(); };
+$('limbaDE').onclick = () => { limba = 'de'; scrieLocal('pm_limba', 'de'); aplicaLimba(); };
+
+// Pornire
+if (!navigator.bluetooth) $('faraBluetooth').style.display = 'block';
+aplicaLimba();
+</script>
+</body>
+</html>
