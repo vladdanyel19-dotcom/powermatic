@@ -113,6 +113,17 @@
   #btnSalveaza { flex: 1; padding: 20px; font-size: 22px; font-weight: 800; background: var(--green); }
   #btnAnuleaza { padding: 20px 16px; font-size: 16px; font-weight: 700; background: #3d4753; }
 
+  /* ---------- FIRMWARE (OTA) ---------- */
+  .ota { margin-top: 18px; }
+  .ota input[type=file] { width: 100%; font-size: 16px; color: var(--text); margin: 10px 0; }
+  .ota input[type=file]::file-selector-button { font: inherit; font-weight: 800; padding: 12px 16px; border: none;
+    border-radius: 12px; background: #3d4753; color: var(--text); margin-right: 10px; }
+  #btnOta { width: 100%; }
+  .bara { height: 26px; background: var(--bg); border-radius: 13px; overflow: hidden; margin-top: 12px; border: 2px solid var(--line); }
+  .bara div { height: 100%; width: 0; background: var(--green); transition: width .2s; }
+  #otaText { margin-top: 8px; font-weight: 700; min-height: 22px; }
+  #otaText.er { color: #ff7b80; }
+
   /* ---------- LOG ---------- */
   .logBara { display: flex; gap: 10px; margin-bottom: 10px; }
   .logBara button { padding: 14px 18px; font-size: 17px; font-weight: 800; background: #3d4753; }
@@ -220,6 +231,17 @@
       <button id="btnAnuleaza" data-t="anuleaza"></button>
       <button id="btnSalveaza"></button>
     </div>
+
+    <div class="card ota">
+      <div class="eticheta" data-t="otaTitlu"></div>
+      <div class="mic" data-t="otaDesc"></div>
+      <input type="file" id="fisierOta" accept=".bin,application/octet-stream">
+      <button class="actiune albastru" id="btnOta" data-hold="OTA">
+        <div class="umplere"></div><span data-t="otaPorneste"></span><small data-t="tine1s"></small>
+      </button>
+      <div class="bara"><div id="otaBara"></div></div>
+      <div id="otaText"></div>
+    </div>
   </section>
 
   <!-- ================= LOG ================= -->
@@ -267,10 +289,19 @@ const TEXTE = {
     faraBluetooth: 'Acest browser nu are Web Bluetooth. Deschide pagina în Google Chrome pe Android (nu în Samsung Internet), de la adresa https://… și pornește Bluetooth și Locația.',
     actualizat: 'actualizat acum {s} s', deconectatBrusc: 'Conexiune pierdută',
     eroriCod: { 1: 'HOPPER', 2: 'CAMERĂ', 3: 'INJECTOR' },
+    unitCurse: 'curse', incercare: 'încercarea {x}/{n} fără tutun',
+    otaTitlu: 'Actualizare firmware', otaDesc: 'Alege fișierul Powermatic.ino.bin (NU cel „merged”, „bootloader” sau „partitions”). Doar în REPAUS. Durează 1–3 minute; telefonul să stea lângă mașină.',
+    otaPorneste: 'ÎNCARCĂ FIRMWARE', otaAlegeFisier: 'Alege întâi fișierul .bin',
+    otaFisierGresit: 'Fișier greșit: trebuie Powermatic.ino.bin (nu merged / bootloader / partitions)',
+    otaConfirma: 'Încarc {f} ({kb} KB) în mașină?\n\nMașina stă cât durează. Dacă se întrerupe, rămâne firmware-ul vechi.',
+    otaPregatire: 'Pregătesc…', otaTrimit: 'Trimit: {p}%', otaVerific: 'Verific firmware-ul…',
+    otaGata: 'Gata! Mașina repornește cu firmware-ul nou. Apasă RECONECTARE.', otaEroare: 'Eroare: {e}. Firmware-ul vechi rămâne.',
+    otaFaraSuport: 'Firmware-ul din mașină nu are încă actualizare prin Bluetooth. Încarcă-l o dată prin USB.',
+    otaAnulat: 'Actualizare oprită. Firmware-ul vechi rămâne.',
     stari: {
       REPAUS: 'Repaus – gata', EROARE: 'EROARE', ASTEPTARE_TUTUN: 'Hopper gol – pune tutun și apasă START',
       HOME: 'Aduc motoarele în HOME', CURATARE_MOD: 'Mod curățare', CURATARE_TEAVA: 'Curăț țeava (injector)',
-      LUCRU: 'Lucrează – ciclu'
+      LUCRU: 'Lucrează – ciclu', INCERCARE: 'Fără tutun – încerc din nou {x}/{n}'
     },
     senzoriNume: { J1: 'START', J2: 'Tutun 1', J3: 'Tutun 2', J5: 'Cameră A', J6: 'Cameră B', J7: 'Injector HOME', J8: 'Hopper HOME', J9: 'AX' },
     setari: {
@@ -280,7 +311,8 @@ const TEXTE = {
       D: ['Treapta 2 – a doua cursă', 'Cât din a doua cursă (100 = 2 curse întregi).'],
       T: ['Cursă hopper completă', 'Durata unei curse complete. Se măsoară și singură.'],
       H: ['Treapta 2/3 – avans după AX', 'Cât mai merge hopper-ul după ultimul AX. 0 = oprit, altfel 40–200.'],
-      G: ['Detecție buncăr gol', 'Fără tutun pe J2/J3 → mașina se oprește și cere tutun.']
+      G: ['Detecție buncăr gol', 'Fără tutun pe J2/J3 → mașina se oprește și cere tutun.'],
+      Y: ['Încercări buncăr gol', 'Câte curse fără tutun la rând până la HOPPER GOL (originalul: 9). 1 = imediat.']
     }
   },
   de: {
@@ -304,10 +336,19 @@ const TEXTE = {
     faraBluetooth: 'Dieser Browser hat kein Web Bluetooth. Seite in Google Chrome auf Android öffnen (nicht Samsung Internet), über https://…, und Bluetooth + Standort einschalten.',
     actualizat: 'aktualisiert vor {s} s', deconectatBrusc: 'Verbindung verloren',
     eroriCod: { 1: 'HOPPER', 2: 'KAMMER', 3: 'INJEKTOR' },
+    unitCurse: 'Hübe', incercare: 'Versuch {x}/{n} ohne Tabak',
+    otaTitlu: 'Firmware-Update', otaDesc: 'Datei Powermatic.ino.bin wählen (NICHT „merged“, „bootloader“ oder „partitions“). Nur im Ruhezustand. Dauert 1–3 Minuten; Handy nahe an der Maschine lassen.',
+    otaPorneste: 'FIRMWARE LADEN', otaAlegeFisier: 'Zuerst die .bin-Datei wählen',
+    otaFisierGresit: 'Falsche Datei: Powermatic.ino.bin nötig (nicht merged / bootloader / partitions)',
+    otaConfirma: '{f} ({kb} KB) in die Maschine laden?\n\nDie Maschine steht währenddessen. Bei Abbruch bleibt die alte Firmware.',
+    otaPregatire: 'Vorbereitung…', otaTrimit: 'Sende: {p}%', otaVerific: 'Prüfe Firmware…',
+    otaGata: 'Fertig! Maschine startet mit neuer Firmware neu. NEU VERBINDEN drücken.', otaEroare: 'Fehler: {e}. Alte Firmware bleibt.',
+    otaFaraSuport: 'Die Firmware in der Maschine kann noch kein Bluetooth-Update. Einmal per USB laden.',
+    otaAnulat: 'Update abgebrochen. Alte Firmware bleibt.',
     stari: {
       REPAUS: 'Bereit', EROARE: 'FEHLER', ASTEPTARE_TUTUN: 'Trichter leer – Tabak nachfüllen, dann START',
       HOME: 'Fahre in Grundstellung', CURATARE_MOD: 'Reinigungsmodus', CURATARE_TEAVA: 'Rohrreinigung (Injektor)',
-      LUCRU: 'Läuft – Zyklus'
+      LUCRU: 'Läuft – Zyklus', INCERCARE: 'Kein Tabak – neuer Versuch {x}/{n}'
     },
     senzoriNume: { J1: 'START', J2: 'Tabak 1', J3: 'Tabak 2', J5: 'Kammer A', J6: 'Kammer B', J7: 'Injektor HOME', J8: 'Hopper HOME', J9: 'AX' },
     setari: {
@@ -317,7 +358,8 @@ const TEXTE = {
       D: ['Stufe 2 – zweiter Hub', 'Anteil des zweiten Hubs (100 = 2 volle Hübe).'],
       T: ['Voller Hopper-Hub', 'Dauer eines vollen Hubs. Wird auch automatisch gemessen.'],
       H: ['Stufe 2/3 – Nachlauf nach AX', 'Hopper-Nachlauf nach dem letzten AX. 0 = aus, sonst 40–200.'],
-      G: ['Leer-Erkennung', 'Kein Tabak an J2/J3 → Maschine hält an und verlangt Tabak.']
+      G: ['Leer-Erkennung', 'Kein Tabak an J2/J3 → Maschine hält an und verlangt Tabak.'],
+      Y: ['Versuche bei leerem Trichter', 'Wie viele Hübe ohne Tabak bis HOPPER LEER (Original: 9). 1 = sofort.']
     }
   }
 };
@@ -343,10 +385,11 @@ const DEF_SETARI = [
   { k: 'D', min: 10, max: 100, pas: 5, unit: '%' },
   { k: 'T', min: 150, max: 1000, pas: 10, unit: 'ms' },
   { k: 'H', min: 0, max: 200, pas: 10, unit: 'ms', special: 'H' },
-  { k: 'G', tip: 'onoff' }
+  { k: 'G', tip: 'onoff' },
+  { k: 'Y', min: 1, max: 20, pas: 1, unitT: 'unitCurse' }
 ];
 
-const masina = { stare: null, treapta: null, zilnic: null, total: null, cod: 0, meniu: 0, home: 1,
+const masina = { stare: null, treapta: null, zilnic: null, total: null, cod: 0, meniu: 0, home: 1, incgol: 0, incgolmax: 9,
   ultimcod: 0, eroare: '-', setari: {}, senzori: {}, senzoriLa: 0 };
 const dorit = {};   // valori modificate de mine, nesalvate
 
@@ -372,8 +415,9 @@ function pasH(v, directie) {
 const UUID_SERVICIU = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const UUID_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const UUID_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+const UUID_OTA = '6e400004-b5a3-f393-e0a9-e50e24dcca9e';
 
-let dispozitiv = null, carRx = null, carTx = null;
+let dispozitiv = null, carRx = null, carTx = null, carOta = null;
 let faza = 'neconectat';   // neconectat | conectare | parola | conectat
 let restPrimit = '';
 let lantScriere = Promise.resolve();
@@ -411,6 +455,8 @@ async function conecteaza() {
     const serviciu = await server.getPrimaryService(UUID_SERVICIU);
     carRx = await serviciu.getCharacteristic(UUID_RX);
     carTx = await serviciu.getCharacteristic(UUID_TX);
+    carOta = null;
+    try { carOta = await serviciu.getCharacteristic(UUID_OTA); } catch (e) {}  // firmware vechi: fara OTA
     restPrimit = '';
     carTx.addEventListener('characteristicvaluechanged', laDatePrimite);
     await carTx.startNotifications();
@@ -434,10 +480,12 @@ function deconecteaza() {
 
 function laDeconectare() {
   const eraConectat = (faza === 'conectat');
-  carRx = carTx = null;
+  carRx = carTx = carOta = null;
   lantScriere = Promise.resolve();
   seteazaFaza('neconectat');
   adaugaLog('BLE deconectat', 'eu');
+  if (ota.faza === 'gata') { ota.faza = null; return; }  // repornire dupa OTA, normal
+  if (ota.faza) termina_ota_eroare('BLE');
   if (eraConectat) { arataMesaj(T().deconectatBrusc); vibreaza([100, 80, 100]); }
 }
 
@@ -517,6 +565,7 @@ function proceseazaLinie(linie) {
     masina.stare = kv.stare;
     masina.treapta = +kv.treapta; masina.zilnic = +kv.zilnic; masina.total = +kv.total;
     masina.cod = +kv.cod; masina.meniu = +kv.meniu; masina.home = +kv.home; masina.ultimcod = +kv.ultimcod;
+    if ('incgol' in kv) { masina.incgol = +kv.incgol; masina.incgolmax = +kv.incgolmax; }
     masina.eroare = idx >= 0 ? linie.slice(idx + 8) : '-';
     if (masina.stare === 'EROARE' && vecheStare && vecheStare !== 'EROARE') vibreaza([300, 100, 300]);
     curataDorite();
@@ -525,11 +574,12 @@ function proceseazaLinie(linie) {
   }
   if (linie.startsWith('#SET ')) {
     const kv = citesteCheiValori(linie);
-    for (const k of ['P', 'D', 'T', 'H', 'G', 'I']) if (k in kv) masina.setari[k] = +kv[k];
+    for (const k of ['P', 'D', 'T', 'H', 'G', 'I', 'Y']) if (k in kv) masina.setari[k] = +kv[k];
     curataDorite();
     randeazaSetari();
     return;
   }
+  if (linie.startsWith('#OTA ')) { laMesajOta(linie.slice(5)); return; }
   if (linie.startsWith('#SENZ ')) {
     const kv = citesteCheiValori(linie);
     for (const k in kv) masina.senzori[k] = +kv[k];
@@ -571,6 +621,7 @@ const asteptConfirmare = new Set();
 function grupStare(s) {
   if (!s) return null;
   if (s === 'REPAUS' || s === 'EROARE' || s === 'ASTEPTARE_TUTUN') return s;
+  if (s === 'PAUZA_INCERCARE_GOL') return 'INCERCARE';
   if (s.startsWith('HOME') || s === 'PAUZA_HOME') return 'HOME';
   if (s.startsWith('MC_')) return 'CURATARE_MOD';
   if (s.includes('CURATARE')) return 'CURATARE_TEAVA';
@@ -580,8 +631,12 @@ function grupStare(s) {
 function randeazaStare() {
   const g = grupStare(masina.stare);
   const card = $('cardStare');
-  card.className = 'card ' + ({ REPAUS: 'repaus', EROARE: 'eroare', ASTEPTARE_TUTUN: 'tutun' }[g] || (g ? 'lucru' : ''));
-  $('stareText').textContent = g ? T().stari[g] : '—';
+  card.className = 'card ' + ({ REPAUS: 'repaus', EROARE: 'eroare', ASTEPTARE_TUTUN: 'tutun', INCERCARE: 'tutun' }[g] || (g ? 'lucru' : ''));
+  // incgol = curse goale deja facute; urmatoarea e incercarea incgol+1 (ca in log)
+  const xn = s => s.replace('{x}', masina.incgol + 1).replace('{n}', masina.incgolmax);
+  let textStare = g ? xn(T().stari[g]) : '—';
+  if (g === 'LUCRU' && masina.incgol > 0) textStare += ' (' + xn(T().incercare) + ')';
+  $('stareText').textContent = textStare;
   $('stareBrut').textContent = masina.stare || '';
 
   const cod3 = n => String(n).padStart(3, '0');
@@ -637,6 +692,7 @@ function actualizeazaButoane() {
   $('btnSenzori').disabled = !ok;
   $('btnTrimite').disabled = !ok;
   $('btnStop').disabled = !ok;
+  if (typeof actualizeazaButoaneOta === 'function') actualizeazaButoaneOta();
 }
 
 // =====================================================
@@ -714,14 +770,16 @@ function randeazaSetari() {
       card.appendChild(r);
       const u = document.createElement('div');
       u.className = 'unitate';
-      u.textContent = def.unit + '  ·  ' + (def.special === 'H' ? '0 / 40–200' : def.min + '–' + def.max) + '  ·  ±' + def.pas;
+      const unitate = def.unitT ? T()[def.unitT] : def.unit;
+      u.textContent = unitate + '  ·  ' + (def.special === 'H' ? '0 / 40–200' : def.min + '–' + def.max) + '  ·  ±' + def.pas;
       card.appendChild(u);
     }
 
     if (k in dorit && vm !== undefined) {
       const im = document.createElement('div');
       im.className = 'inMasina';
-      im.textContent = T().inMasina + ': ' + (def.tip === 'onoff' ? (vm ? T().pornit : T().oprit) : vm + (def.unit ? ' ' + def.unit : ''));
+      const unitIm = def.unitT ? T()[def.unitT] : def.unit;
+      im.textContent = T().inMasina + ': ' + (def.tip === 'onoff' ? (vm ? T().pornit : T().oprit) : vm + (unitIm ? ' ' + unitIm : ''));
       card.appendChild(im);
     }
     lista.appendChild(card);
@@ -753,7 +811,7 @@ function actualizeazaSalvare() {
 
 async function salveaza() {
   if (!setariPermise()) { arataMesaj(T().doarRepaus); return; }
-  const ordine = ['I', 'P', 'D', 'T', 'H', 'G', 'N'];
+  const ordine = ['I', 'P', 'D', 'T', 'H', 'G', 'Y', 'N'];
   for (const k of ordine) {
     if (!(k in dorit)) continue;
     asteptConfirmare.add(k);
@@ -867,7 +925,7 @@ document.querySelectorAll('nav button').forEach(b => {
 
 // Pe pagina STARE: citeste starea si senzorii la 2 s
 setInterval(() => {
-  if (faza === 'conectat' && paginaActiva === 'stare' && document.visibilityState === 'visible') scrieBLE('?', true);
+  if (faza === 'conectat' && !ota.faza && paginaActiva === 'stare' && document.visibilityState === 'visible') scrieBLE('?', true);
   randeazaVarstaSenzori();
 }, 2000);
 
@@ -883,6 +941,118 @@ async function gestioneazaBlocareEcran() {
   } catch (e) {}
 }
 document.addEventListener('visibilitychange', gestioneazaBlocareEcran);
+
+// =====================================================
+// ACTUALIZARE FIRMWARE PRIN BLE
+// 1. "#OTA <marime>"  ->  masina raspunde "#OTA READY"
+// 2. fisierul .bin in bucati de 240 de octeti pe caracteristica OTA
+// 3. masina verifica si raspunde "#OTA OK" (apoi reporneste) sau "#OTA ERR ..."
+// =====================================================
+const OTA_BUCATA = 240;
+const ota = { faza: null, asteptare: null, trimis: 0, total: 0 };
+
+function textOta(text, eroare) {
+  $('otaText').textContent = text;
+  $('otaText').classList.toggle('er', !!eroare);
+}
+function baraOta(procent) { $('otaBara').style.width = Math.max(0, Math.min(100, procent)) + '%'; }
+
+// Asteapta un raspuns "#OTA ..." de la masina
+function asteaptaOta(ms) {
+  return new Promise((rezolva, respinge) => {
+    const t = setTimeout(() => { ota.asteptare = null; respinge(new Error('TIMEOUT')); }, ms);
+    ota.asteptare = { rezolva: v => { clearTimeout(t); rezolva(v); }, respinge: e => { clearTimeout(t); respinge(e); } };
+  });
+}
+
+function laMesajOta(rest) {
+  if (rest === 'READY' || rest === 'OK') {
+    if (ota.asteptare) { const a = ota.asteptare; ota.asteptare = null; a.rezolva(rest); }
+  } else if (rest.startsWith('ERR')) {
+    const motiv = rest.slice(4) || '?';
+    adaugaLog('OTA: ' + motiv, 'er');
+    if (ota.asteptare) { const a = ota.asteptare; ota.asteptare = null; a.respinge(new Error(motiv)); }
+    else if (ota.faza) termina_ota_eroare(motiv);
+  } else {
+    const m = rest.match(/^(\d+)\/(\d+)$/);   // progres confirmat de masina
+    if (m && ota.faza === 'trimit') baraOta(100 * (+m[1]) / (+m[2]));
+  }
+}
+
+function termina_ota_eroare(motiv) {
+  ota.faza = null;
+  textOta(T().otaEroare.replace('{e}', motiv), true);
+  vibreaza([300, 100, 300]);
+  actualizeazaButoaneOta();
+}
+
+function actualizeazaButoaneOta() {
+  const b = $('btnOta');
+  b.disabled = faza !== 'conectat' || masina.stare !== 'REPAUS' || !!ota.faza;
+  $('fisierOta').disabled = !!ota.faza;
+}
+
+async function pornesteOta() {
+  const f = $('fisierOta').files[0];
+  if (!f) { arataMesaj(T().otaAlegeFisier); return; }
+  if (!carOta) { textOta(T().otaFaraSuport, true); return; }
+  const nume = f.name.toLowerCase();
+  const date = new Uint8Array(await f.arrayBuffer());
+  // .bin de aplicatie: incepe cu 0xE9; fisierul "merged" contine si bootloader-ul
+  if (!nume.endsWith('.bin') || /merged|bootloader|partitions|boot_app/.test(nume) ||
+      date.length < 100000 || date.length > 3500000 || date[0] !== 0xE9) {
+    textOta(T().otaFisierGresit, true); return;
+  }
+  if (!confirm(T().otaConfirma.replace('{f}', f.name).replace('{kb}', Math.round(date.length / 1024)))) return;
+
+  ota.faza = 'pregatire'; ota.trimis = 0; ota.total = date.length;
+  actualizeazaButoaneOta();
+  baraOta(0);
+  textOta(T().otaPregatire);
+  adaugaLog('OTA: ' + f.name + ' ' + date.length + ' B', 'eu');
+
+  try {
+    const raspuns = asteaptaOta(8000);
+    await scrieBLE('#OTA ' + date.length);
+    await raspuns;  // READY
+
+    ota.faza = 'trimit';
+    const t0 = Date.now();
+    for (let i = 0; i < date.length; i += OTA_BUCATA) {
+      if (ota.faza !== 'trimit') throw new Error(T().otaAnulat);
+      const bucata = date.slice(i, i + OTA_BUCATA);
+      // prin acelasi lant ca restul scrierilor (BLE nu accepta doua deodata)
+      lantScriere = lantScriere.then(() => carOta.writeValueWithResponse(bucata));
+      await lantScriere;
+      ota.trimis = i + bucata.length;
+      if ((i / OTA_BUCATA) % 20 === 0 || ota.trimis === date.length) {
+        const p = Math.floor(100 * ota.trimis / date.length);
+        const sec = (Date.now() - t0) / 1000;
+        const kbs = sec > 0 ? (ota.trimis / 1024 / sec).toFixed(1) : '';
+        textOta(T().otaTrimit.replace('{p}', p) + (kbs ? '  ·  ' + kbs + ' KB/s' : ''));
+        baraOta(p);
+      }
+    }
+
+    ota.faza = 'verific';
+    textOta(T().otaVerific);
+    await asteaptaOta(30000);   // OK
+    ota.faza = 'gata';
+    baraOta(100);
+    textOta(T().otaGata);
+    adaugaLog('OTA OK', 'eu');
+    vibreaza([100, 60, 100, 60, 300]);
+  } catch (e) {
+    lantScriere = Promise.resolve();
+    if (ota.faza && ota.faza !== 'gata') {
+      if (faza === 'conectat') scrieBLE('#OTA ANULEAZA', true);
+      termina_ota_eroare(e && e.message ? e.message : String(e));
+    }
+  }
+  actualizeazaButoaneOta();
+}
+
+butonTinut($('btnOta'), pornesteOta);
 
 // =====================================================
 // LIMBA
